@@ -1,6 +1,9 @@
 package com.votingapp.server;
 
 import com.votingapp.client.User;
+import com.votingapp.message.Message;
+import com.votingapp.message.MessageType;
+import lombok.Getter;
 
 import java.io.*;
 import java.net.Socket;
@@ -8,10 +11,13 @@ import java.util.Scanner;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
+    @Getter
     private final int clientId;
-    private ObjectInputStream inputStream;
-    private ObjectOutputStream outputStream;
-    private Scanner scanner;
+    private final ObjectInputStream inputStream;
+    private final ObjectOutputStream outputStream;
+    private final Scanner scanner;
+    @Getter
+    private boolean isAuthenticated;
 
     public ClientHandler(Socket socket, int clientId) {
         this.socket = socket;
@@ -37,7 +43,7 @@ public class ClientHandler extends Thread {
             outputStream.writeObject("Welcome to the server, you are client " + clientId + " Authenticate yourself");
             outputStream.flush();
             User user = (User) inputStream.readObject();
-            boolean isAuthenticated = authenticateVoter(user);
+            isAuthenticated = authenticateVoter(user);
             outputStream.writeBoolean(isAuthenticated);
             outputStream.flush();
             if (!isAuthenticated) {
@@ -45,27 +51,37 @@ public class ClientHandler extends Thread {
             }
 
             while (true) {
+                sendMessage(Message.builder()
+                        .message("Enter your vote: ")
+                        .messageType(MessageType.INFO)
+                        .build()
+                );
                 input = (String) inputStream.readObject();
-                System.out.println("Client " + clientId + ": " + input);
-                System.out.print("Server: ");
-                output = scanner.nextLine();
-                outputStream.writeObject(output);
-                outputStream.flush();
+                System.out.println("Client " + clientId + " voted: " + input);
             }
         } catch (Exception e) {
             System.out.println("Client " + clientId + " disconnected");
         } finally {
             try {
-                socket.close();
                 inputStream.close();
                 outputStream.close();
+                socket.close();
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                System.out.println("Error 1: " + e.getMessage());
             }
         }
     }
 
     public boolean authenticateVoter(User user) {
         return user.getVoterId() == 1 && user.getPassword().equals("a");
+    }
+
+    public void sendMessage(Message message) {
+        try {
+            outputStream.writeObject(message);
+            outputStream.flush();
+        } catch (IOException e) {
+            System.out.println("Error 4: " + e.getMessage());
+        }
     }
 }
