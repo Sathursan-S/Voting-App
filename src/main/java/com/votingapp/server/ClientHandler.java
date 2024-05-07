@@ -1,27 +1,28 @@
 package com.votingapp.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import com.votingapp.client.User;
+
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
     private final int clientId;
-    private DataInputStream inputStream;
-    private DataOutputStream outputStream;
+    private ObjectInputStream inputStream;
+    private ObjectOutputStream outputStream;
     private Scanner scanner;
 
     public ClientHandler(Socket socket, int clientId) {
         this.socket = socket;
         this.clientId = clientId;
         try {
-            inputStream = new DataInputStream(socket.getInputStream());
+            inputStream = new ObjectInputStream(socket.getInputStream());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         try {
-            outputStream = new DataOutputStream(socket.getOutputStream());
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -33,22 +34,22 @@ public class ClientHandler extends Thread {
         try {
             String input;
             String output;
-            outputStream.writeUTF("Welcome to the server, you are client " + clientId + " Authenticate yourself");
+            outputStream.writeObject("Welcome to the server, you are client " + clientId + " Authenticate yourself");
             outputStream.flush();
-            String voterId = inputStream.readUTF();
-            String password = inputStream.readUTF();
-            boolean isAuthenticated = authenticateVoter(voterId, password);
+            User user = (User) inputStream.readObject();
+            boolean isAuthenticated = authenticateVoter(user);
             outputStream.writeBoolean(isAuthenticated);
+            outputStream.flush();
             if (!isAuthenticated) {
                 return;
             }
 
             while (true) {
-                input = inputStream.readUTF();
+                input = (String) inputStream.readObject();
                 System.out.println("Client " + clientId + ": " + input);
-                System.out.println("Server: ");
+                System.out.print("Server: ");
                 output = scanner.nextLine();
-                outputStream.writeUTF(output);
+                outputStream.writeObject(output);
                 outputStream.flush();
             }
         } catch (Exception e) {
@@ -59,12 +60,12 @@ public class ClientHandler extends Thread {
                 inputStream.close();
                 outputStream.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }
 
-    public boolean authenticateVoter(String voterId, String password) {
-        return voterId.equals("1") && password.equals("a");
+    public boolean authenticateVoter(User user) {
+        return user.getVoterId() == 1 && user.getPassword().equals("a");
     }
 }
