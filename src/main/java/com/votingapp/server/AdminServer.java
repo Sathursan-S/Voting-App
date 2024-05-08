@@ -46,8 +46,12 @@ public class AdminServer {
                 if(scanner.nextLine().equals("stop")) {
                     System.out.println("Voting stopped");
                     stopVoting();
+                    break;
                 }
             }
+
+            broadcastMessage("Thank you for voting\nHave a nice day!");
+
         } finally {
             serverSocket.close();
         }
@@ -99,7 +103,6 @@ public class AdminServer {
     public static void stopVoting() {
         isVotingOpen = false;
 
-        // count votes and declare winner
         int maxVotes = 0;
         int winner = 0;
         for (Map.Entry<Integer, Integer> entry : voteBallet.getVotes().entrySet()) {
@@ -108,17 +111,22 @@ public class AdminServer {
                 winner = entry.getKey();
             }
         }
-        // broadcast winner
+
         broadcastMessage("The winner is: " + voteBallet.getCandidates().get(winner));
         System.out.println("The winner is: " + voteBallet.getCandidates().get(winner));
-        // broadcast votes
+
         for (Map.Entry<Integer, Integer> entry : voteBallet.getVotes().entrySet()) {
             broadcastMessage(voteBallet.getCandidates().get(entry.getKey()) + " : " + entry.getValue());
             System.out.println(voteBallet.getCandidates().get(entry.getKey()) + " : " + entry.getValue());
         }
     }
 
-    public static void setVote(int candidateId) {
-        voteBallet.addVote(candidateId);
+    public static boolean setVote(int candidateId) {
+        if(isVotingOpen) {
+            voteBallet.addVote(candidateId);
+            return true;
+        }else {
+            return false;
+        }
     }
 }

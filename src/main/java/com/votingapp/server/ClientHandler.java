@@ -60,14 +60,18 @@ public class ClientHandler extends Thread {
                 switch (message.getMessageType()) {
                     case VOTING_RESPONSE:
                         int candidateId = (int) message.getMessage();
-                        AdminServer.setVote(candidateId);
+                        String msg;
+                        if(AdminServer.setVote(candidateId)){
+                            msg = "Your vote has been recorded";
+                        }else {
+                            msg = "Voting is closed \nYour vote has not been recorded";
+                        }
                         outputStream.writeObject(Message.builder()
-                                .message("Your vote has been recorded")
+                                .message(msg)
                                 .messageType(MessageType.INFO)
                                 .build()
                         );
                         break;
-
                     case INFO:
                         System.out.println("INFO : " + message.getMessage());
                         message.setMessage(scanner.nextLine());
