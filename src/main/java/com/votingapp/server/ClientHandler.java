@@ -49,6 +49,8 @@ public class ClientHandler extends Thread {
             if (!isAuthenticated) {
                 return;
             }
+            AdminServer.addClient(this);
+            AdminServer.broadcastMessage("Client " + clientId + " has joined the server");
 
             while (true) {
                 sendMessage(Message.builder()
