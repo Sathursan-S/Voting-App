@@ -1,10 +1,13 @@
 package com.votingapp.client;
 
 import com.votingapp.message.Message;
+import com.votingapp.message.MessageType;
+import com.votingapp.message.VoteBallet;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Voters {
@@ -43,6 +46,21 @@ public class Voters {
             while(true) {
                 Message message = (Message) inputStream.readObject();
                 switch (message.getMessageType()) {
+                    case VOTING_REQUEST:
+                        Map<Integer,String> candidates = (Map<Integer, String>) message.getMessage();
+                        System.out.println("Here are the candidates: ");
+                        for (Map.Entry<Integer, String> entry : candidates.entrySet()) {
+                            System.out.println(entry.getKey() + " : " + entry.getValue());
+                        }
+                        System.out.println("Enter the candidate ID you want to vote for: ");
+                        int candidateId = Integer.parseInt(scanner.nextLine());
+                        Message voteResponse = Message.builder()
+                                .messageType(MessageType.VOTING_RESPONSE)
+                                .message(candidateId)
+                                .build();
+                        outputStream.writeObject(voteResponse);
+                        outputStream.flush();
+                        break;
                     case INFO:
                         System.out.println("INFO : " + message.getMessage());
                         break;

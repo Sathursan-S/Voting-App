@@ -53,13 +53,40 @@ public class ClientHandler extends Thread {
             AdminServer.broadcastMessage("Client " + clientId + " has joined the server");
 
             while (true) {
-                sendMessage(Message.builder()
-                        .message("Enter your vote: ")
-                        .messageType(MessageType.INFO)
-                        .build()
-                );
-                input = (String) inputStream.readObject();
-                System.out.println("Client " + clientId + " voted: " + input);
+                Message message = receiveMessage();
+                if (message == null) {
+                    break;
+                }
+                switch (message.getMessageType()) {
+                    case VOTING_RESPONSE:
+                        int candidateId = (int) message.getMessage();
+                        AdminServer.setVote(candidateId);
+                        outputStream.writeObject(Message.builder()
+                                .message("Your vote has been recorded")
+                                .messageType(MessageType.INFO)
+                                .build()
+                        );
+                        break;
+
+                    case INFO:
+                        System.out.println("INFO : " + message.getMessage());
+                        message.setMessage(scanner.nextLine());
+                        sendMessage(message);
+                        break;
+                    case BROADCAST:
+                        System.out.println("Server Broadcast: " + message.getMessage());
+                        break;
+                    default:
+                        System.out.println("Server says: " + message.getMessage());
+                        break;
+                }
+//                sendMessage(Message.builder()
+//                        .message("Enter your vote: ")
+//                        .messageType(MessageType.INFO)
+//                        .build()
+//                );
+//                input = (String) inputStream.readObject();
+//                System.out.println("Client " + clientId + " voted: " + input);
             }
         } catch (Exception e) {
             System.out.println("Client " + clientId + " disconnected");
@@ -84,6 +111,15 @@ public class ClientHandler extends Thread {
             outputStream.flush();
         } catch (IOException e) {
             System.out.println("Error 4: " + e.getMessage());
+        }
+    }
+
+    public Message receiveMessage() {
+        try {
+            return (Message) inputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error 3: " + e.getMessage());
+            return null;
         }
     }
 }
