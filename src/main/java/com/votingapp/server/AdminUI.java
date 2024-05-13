@@ -7,6 +7,7 @@ import com.votingapp.server.ui.VoterManagePanel;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 
 public class AdminUI extends JFrame {
     private VoteManager voteManager;
@@ -44,7 +45,7 @@ public class AdminUI extends JFrame {
         panel.setLayout(new GridLayout(4, 1)); // Simple grid layout
 
         JButton openVotingButton = new JButton("Open Voting");
-        openVotingButton.addActionListener(e -> voteManager.startVoting());
+        openVotingButton.addActionListener(this::openVoting);
 
         JButton closeVotingButton = new JButton("Close Voting");
         closeVotingButton.addActionListener(e -> voteManager.stopVoting());
@@ -63,13 +64,23 @@ public class AdminUI extends JFrame {
         return panel;
     }
 
+    private void openVoting(ActionEvent actionEvent) {
+        if(voteManager.isVotingOpen()) {
+            JOptionPane.showMessageDialog(this, "Voting is already open", "Voting Open", JOptionPane.INFORMATION_MESSAGE);
+        } else if(voteManager.getVoteBallot().getCandidates().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No candidates to vote for", "No Candidates", JOptionPane.ERROR_MESSAGE);
+        } else {
+            voteManager.startVoting();
+        }
+    }
+
     private JPanel createCandidateManagePanel() {
         CandidateManagePanel panel = new CandidateManagePanel(voteManager);
         return panel;
     }
 
     private JPanel createVoteCounterPanel() {
-        VoteCounterPanel panel = new VoteCounterPanel();
+        VoteCounterPanel panel = new VoteCounterPanel(voteManager);
         return panel;
     }
 
@@ -79,9 +90,13 @@ public class AdminUI extends JFrame {
     }
 
     private void broadcastMessage(ActionEvent e) {
-        String message = JOptionPane.showInputDialog(this, "Enter broadcast message:");
-        if (message != null && !message.isEmpty()) {
-            System.out.println("Broadcasting message: " + message); // Replace with actual broadcast logic
+        String message = JOptionPane.showInputDialog(this, "Enter message to broadcast:");
+        if (message != null) {
+            try {
+                Server.broadcastMessage(message);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 

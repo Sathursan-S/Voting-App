@@ -8,5 +8,5 @@ public enum MessageType {
     VOTE_SUBMIT,
     VOTING_UPDATE,
     BROADCAST,
-    INFO, ERROR
+    INFO, VOTING_RESULTS, ERROR
 }

@@ -8,6 +8,14 @@ import java.util.List;
 public class VotersManager {
     private  final List<User> voters = new ArrayList<>();
 
+    public VotersManager() {
+        addVoter(new User("Voter1", "1234"));
+        addVoter(new User("Voter2", "2345"));
+        addVoter(new User("Voter3", "3456"));
+        addVoter(new User("Voter4", "4567"));
+        addVoter(new User("Voter5", "5678"));
+    }
+
     public void addVoter(User user) {
         voters.add(user);
         System.out.println("Voter added: " + voters);
@@ -54,5 +62,12 @@ public class VotersManager {
 
     public void deleteVoter(String voterId) {
         voters.removeIf(voter -> voter.getVoterID().equals(voterId));
+    }
+
+    public void removeClient(String voterId) {
+        voters.stream()
+                .filter(voter -> voter.getVoterID().equals(voterId))
+                .findFirst()
+                .ifPresent(voter -> voter.setLogin(false));
     }
 }

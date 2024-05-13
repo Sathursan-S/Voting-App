@@ -68,7 +68,6 @@ public class CandidateManagePanel extends JPanel {
     }
 
     private void setupTable() {
-        // Initialize or refresh the table data
         refreshCandidates(null);
     }
 
@@ -97,6 +96,10 @@ public class CandidateManagePanel extends JPanel {
     private void deleteCandidate(ActionEvent event) {
         String id = candidateIdField.getText();
         if (!id.isEmpty()) {
+            voteManager.deleteCandidate(Integer.parseInt(id));
+            refreshCandidates(null);
+        }else if (candidatesTable.getSelectedRow() != -1) {
+            id = (String) tableModel.getValueAt(candidatesTable.getSelectedRow(), 0);
             voteManager.deleteCandidate(Integer.parseInt(id));
             refreshCandidates(null);
         }

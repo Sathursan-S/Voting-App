@@ -16,6 +16,7 @@ public class ClientHandler extends Thread {
     private VoteManager voteManager;
     private AtomicBoolean authenticated = new AtomicBoolean(false);
     private VotersManager votersManager;
+    private String voterId;
 
     public ClientHandler(Socket socket, VoteManager voteManager, VotersManager votersManager) {
         this.socket = socket;
@@ -53,7 +54,7 @@ public class ClientHandler extends Thread {
             case LOGIN_REQUEST:
                 handleLogin((User) message.getMessage());
                 break;
-            case VOTE_SUBMIT:
+            case VOTING_RESPONSE:
                 if (authenticated.get()) {
                     handleVote(Integer.parseInt(message.getMessage().toString()));
                 } else {
@@ -69,6 +70,7 @@ public class ClientHandler extends Thread {
     private void handleLogin(User user) throws IOException {
         if (authenticate(user)) {
             authenticated.set(true);
+            voterId = user.getVoterID();
             sendMessage(new Message(MessageType.LOGIN_RESPONSE, authenticated.get()));
         } else {
             sendMessage(new Message(MessageType.LOGIN_RESPONSE, authenticated.get()));
@@ -81,13 +83,13 @@ public class ClientHandler extends Thread {
 
     private void handleVote(int candidateId) throws IOException {
         if (voteManager.castVote(candidateId)) {
-            sendMessage(new Message(MessageType.VOTING_RESPONSE, "Vote cast successfully."));
+            sendMessage(new Message(MessageType.VOTE_SUBMIT, true));
         } else {
-            sendMessage(new Message(MessageType.ERROR, "Failed to cast vote. Voting may be closed."));
+            sendMessage(new Message(MessageType.VOTE_SUBMIT, false));
         }
     }
 
-    private void sendMessage(Message message) throws IOException {
+    void sendMessage(Message message) throws IOException {
         outputStream.writeObject(message);
         outputStream.flush();
     }
@@ -97,8 +99,10 @@ public class ClientHandler extends Thread {
             if (inputStream != null) inputStream.close();
             if (outputStream != null) outputStream.close();
             if (socket != null) socket.close();
+            votersManager.removeClient(voterId);
         } catch (IOException e) {
             System.err.println("Error closing connection: " + e.getMessage());
         }
     }
+
 }

@@ -14,4 +14,10 @@ public class User implements Serializable {
     private String voterID;
     private String password;
     private boolean isLogin = false;
+
+    public User(String voterID, String password) {
+        this.voterID = voterID;
+        this.password = password;
+        this.isLogin = false;
+    }
 }

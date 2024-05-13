@@ -1,18 +1,23 @@
 package com.votingapp.server.ui;
 
+import com.votingapp.server.VoteManager;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class VoteCounterPanel extends JPanel {
     private JButton startCountingButton, broadcastResultsButton;
     private JTable resultsTable;
     private DefaultTableModel tableModel;
+    private VoteManager voteManager;
 
-    public VoteCounterPanel() {
+    public VoteCounterPanel(VoteManager voteManager) {
+        this.voteManager = voteManager;
         initializeComponents();
         setupLayout();
         setupTable();
@@ -48,13 +53,23 @@ public class VoteCounterPanel extends JPanel {
     }
 
     private void startVoteCounting(ActionEvent event) {
-
-        // After starting counting, the server should send back results which should update the table
+        if(!voteManager.isVotingOpen()) {
+            voteManager.startCounting();
+            ConcurrentHashMap<Integer, Integer> results = voteManager.getResults();
+            tableModel.setRowCount(0);
+            results.forEach((candidateId, votes) -> {
+                tableModel.addRow(new Object[]{candidateId, votes});
+            });        } else {
+            JOptionPane.showMessageDialog(this, "Voting is ongoing!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void broadcastResults(ActionEvent event) {
-
-        // This would trigger the server to send the results to all clients
+        if(voteManager.isVotingOpen()) {
+            JOptionPane.showMessageDialog(this, "Voting is not yet closed!", "Error", JOptionPane.ERROR_MESSAGE);
+        } else {
+          voteManager.reportResults();
+        }
     }
 
 
