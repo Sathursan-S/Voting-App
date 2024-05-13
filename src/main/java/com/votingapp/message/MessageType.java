@@ -4,5 +4,5 @@ public enum MessageType {
     VOTING_REQUEST,
     VOTING_RESPONSE,
     INFO,
-    BROADCAST,
+    BROADCAST, LOGIN_REQUEST,
 }

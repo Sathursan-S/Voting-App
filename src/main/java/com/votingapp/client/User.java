@@ -1,16 +1,17 @@
 package com.votingapp.client;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class User implements Serializable {
-    private int voterId;
+    private static final long serialVersionUID = 1L;
+    private String voterID;
     private String password;
+    private boolean isLogin = false;
 }

@@ -1,129 +1,104 @@
 package com.votingapp.server;
 
+import com.votingapp.common.Message;
+import com.votingapp.common.MessageType;
 import com.votingapp.client.User;
-import com.votingapp.message.Message;
-import com.votingapp.message.MessageType;
-import lombok.Getter;
-
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientHandler extends Thread {
-    private final Socket socket;
-    @Getter
-    private final int clientId;
-    private final ObjectInputStream inputStream;
-    private final ObjectOutputStream outputStream;
-    private final Scanner scanner;
-    @Getter
-    private boolean isAuthenticated;
+    private Socket socket;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
+    private VoteManager voteManager;
+    private AtomicBoolean authenticated = new AtomicBoolean(false);
+    private VotersManager votersManager;
 
-    public ClientHandler(Socket socket, int clientId) {
+    public ClientHandler(Socket socket, VoteManager voteManager, VotersManager votersManager) {
         this.socket = socket;
-        this.clientId = clientId;
+        this.voteManager = voteManager;
+        this.votersManager = votersManager;
         try {
-            inputStream = new ObjectInputStream(socket.getInputStream());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            this.outputStream = new ObjectOutputStream(socket.getOutputStream());
+            this.inputStream = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            System.err.println("Error initializing streams: " + e.getMessage());
+            closeConnection();  // Close connection if streams cannot be initialized
         }
-        try {
-            outputStream = new ObjectOutputStream(socket.getOutputStream());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        scanner = new Scanner(System.in);
     }
 
     @Override
     public void run() {
         try {
-            String input;
-            String output;
-            outputStream.writeObject("Welcome to the server, you are client " + clientId + " Authenticate yourself");
-            outputStream.flush();
-            User user = (User) inputStream.readObject();
-            isAuthenticated = authenticateVoter(user);
-            outputStream.writeBoolean(isAuthenticated);
-            outputStream.flush();
-            if (!isAuthenticated) {
-                return;
-            }
-            AdminServer.addClient(this);
-            AdminServer.broadcastMessage("Client " + clientId + " has joined the server");
-
             while (true) {
-                Message message = receiveMessage();
-                if (message == null) {
-                    break;
+                Message message = (Message) inputStream.readObject();
+                if (message != null) {
+                    processMessage(message);
+                } else {
+                    break;  // End the loop if message is null
                 }
-                switch (message.getMessageType()) {
-                    case VOTING_RESPONSE:
-                        int candidateId = (int) message.getMessage();
-                        String msg;
-                        if(AdminServer.setVote(candidateId)){
-                            msg = "Your vote has been recorded";
-                        }else {
-                            msg = "Voting is closed \nYour vote has not been recorded";
-                        }
-                        outputStream.writeObject(Message.builder()
-                                .message(msg)
-                                .messageType(MessageType.INFO)
-                                .build()
-                        );
-                        break;
-                    case INFO:
-                        System.out.println("INFO : " + message.getMessage());
-                        message.setMessage(scanner.nextLine());
-                        sendMessage(message);
-                        break;
-                    case BROADCAST:
-                        System.out.println("Server Broadcast: " + message.getMessage());
-                        break;
-                    default:
-                        System.out.println("Server says: " + message.getMessage());
-                        break;
-                }
-//                sendMessage(Message.builder()
-//                        .message("Enter your vote: ")
-//                        .messageType(MessageType.INFO)
-//                        .build()
-//                );
-//                input = (String) inputStream.readObject();
-//                System.out.println("Client " + clientId + " voted: " + input);
             }
-        } catch (Exception e) {
-            System.out.println("Client " + clientId + " disconnected");
-        } finally {
-            try {
-                inputStream.close();
-                outputStream.close();
-                socket.close();
-            } catch (Exception e) {
-                System.out.println("Error 1: " + e.getMessage());
-            }
-        }
-    }
-
-    public boolean authenticateVoter(User user) {
-        return user.getVoterId() == 1 && user.getPassword().equals("a");
-    }
-
-    public void sendMessage(Message message) {
-        try {
-            outputStream.writeObject(message);
-            outputStream.flush();
-        } catch (IOException e) {
-            System.out.println("Error 4: " + e.getMessage());
-        }
-    }
-
-    public Message receiveMessage() {
-        try {
-            return (Message) inputStream.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            System.out.println("Error 3: " + e.getMessage());
-            return null;
+            System.err.println("Error handling client message: " + e.getMessage());
+        } finally {
+            closeConnection();
+        }
+    }
+
+    private void processMessage(Message message) throws IOException {
+        switch (message.getMessageType()) {
+            case LOGIN_REQUEST:
+                handleLogin((User) message.getMessage());
+                break;
+            case VOTE_SUBMIT:
+                if (authenticated.get()) {
+                    handleVote(Integer.parseInt(message.getMessage().toString()));
+                } else {
+                    sendMessage(new Message(MessageType.ERROR, "Authentication required."));
+                }
+                break;
+            default:
+                sendMessage(new Message(MessageType.ERROR, "Invalid message type."));
+                break;
+        }
+    }
+
+    private void handleLogin(User user) throws IOException {
+        if (authenticate(user)) {
+            authenticated.set(true);
+            sendMessage(new Message(MessageType.LOGIN_RESPONSE, authenticated.get()));
+        } else {
+            sendMessage(new Message(MessageType.LOGIN_RESPONSE, authenticated.get()));
+        }
+    }
+
+    private boolean authenticate(User user) {
+        return votersManager.authenticateVoter(user);
+    }
+
+    private void handleVote(int candidateId) throws IOException {
+        if (voteManager.castVote(candidateId)) {
+            sendMessage(new Message(MessageType.VOTING_RESPONSE, "Vote cast successfully."));
+        } else {
+            sendMessage(new Message(MessageType.ERROR, "Failed to cast vote. Voting may be closed."));
+        }
+    }
+
+    private void sendMessage(Message message) throws IOException {
+        outputStream.writeObject(message);
+        outputStream.flush();
+    }
+
+    private void closeConnection() {
+        try {
+            if (inputStream != null) inputStream.close();
+            if (outputStream != null) outputStream.close();
+            if (socket != null) socket.close();
+        } catch (IOException e) {
+            System.err.println("Error closing connection: " + e.getMessage());
         }
     }
 }
