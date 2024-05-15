@@ -103,16 +103,16 @@ public class AdminUI extends JFrame {
     public static void main(String[] args) {
         VoteManager voteManager = new VoteManager();
         VotersManager voterManager = new VotersManager();
-        //run server in new thread
+
         EventQueue.invokeLater(() -> {
             AdminUI adminUI = new AdminUI(voteManager, voterManager);
             adminUI.setVisible(true);
         });
         new Thread(() -> {
-            int port = 8080; // Default port for the server
+            int port = 4196;
             if (args.length > 0) {
                 try {
-                    port = Integer.parseInt(args[0]); // Allow port number to be passed as an argument
+                    port = Integer.parseInt(args[0]);
                 } catch (NumberFormatException e) {
                     System.err.println("Invalid port number provided, using default port " + port);
                 }

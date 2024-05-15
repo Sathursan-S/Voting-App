@@ -90,8 +90,12 @@ public class ClientHandler extends Thread {
     }
 
     void sendMessage(Message message) throws IOException {
-        outputStream.writeObject(message);
-        outputStream.flush();
+        if (!socket.isClosed()) {
+            outputStream.writeObject(message);
+            outputStream.flush();
+        } else {
+            System.err.println("Cannot send message, socket is closed");
+        }
     }
 
     private void closeConnection() {

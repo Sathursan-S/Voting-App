@@ -108,6 +108,7 @@ public class CandidateManagePanel extends JPanel {
     private void refreshCandidates(ActionEvent event) {
         tableModel.setRowCount(0);
         VoteBallot ballot = voteManager.getVoteBallot();
+
         for (Integer id : ballot.getCandidates().keySet()) {
             tableModel.addRow(new Object[]{id, ballot.getCandidates().get(id)});
         }

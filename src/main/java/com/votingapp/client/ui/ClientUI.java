@@ -171,8 +171,8 @@ public class ClientUI extends JFrame {
     }
 
     private void updateVotingPanel() {
-        JPanel votingPanel = (JPanel) cards.getComponent(2); // Assuming the voting panel is the third panel
-        votingPanel.removeAll(); // Remove all existing components
+        JPanel votingPanel = (JPanel) cards.getComponent(2);
+        votingPanel.removeAll();
 
         JButton submitButton = new JButton("Submit Vote");
         ButtonGroup group = new ButtonGroup();
@@ -196,7 +196,11 @@ public class ClientUI extends JFrame {
 
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
-            ClientUI clientUI = new ClientUI("localhost", 8080);
+            String serverAddress = JOptionPane.showInputDialog("Enter server address:");
+            String serverPortStr = JOptionPane.showInputDialog("Enter server port:");
+            int serverPort = Integer.parseInt(serverPortStr);
+
+            ClientUI clientUI = new ClientUI(serverAddress, serverPort);
             clientUI.setVisible(true);
         });
     }

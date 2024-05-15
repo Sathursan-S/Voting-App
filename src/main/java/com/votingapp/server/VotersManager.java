@@ -9,9 +9,9 @@ public class VotersManager {
     private  final List<User> voters = new ArrayList<>();
 
     public VotersManager() {
-        addVoter(new User("Voter1", "1234"));
-        addVoter(new User("Voter2", "2345"));
-        addVoter(new User("Voter3", "3456"));
+        addVoter(new User("Sathu", "4196"));
+        addVoter(new User("Himosh", "3967"));
+        addVoter(new User("Shathu", "4216"));
         addVoter(new User("Voter4", "4567"));
         addVoter(new User("Voter5", "5678"));
     }
