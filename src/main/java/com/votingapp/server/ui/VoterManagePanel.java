@@ -1,6 +1,6 @@
 package com.votingapp.server.ui;
 
-import com.votingapp.client.User;
+import com.votingapp.common.User;
 import com.votingapp.server.VotersManager;
 
 import javax.swing.*;

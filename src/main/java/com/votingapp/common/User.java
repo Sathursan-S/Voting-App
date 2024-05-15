@@ -1,4 +1,4 @@
-package com.votingapp.client;
+package com.votingapp.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

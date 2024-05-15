@@ -1,7 +1,7 @@
 package com.votingapp.client.ui;
 
 import com.votingapp.client.ClientSocketManager;
-import com.votingapp.client.User;
+import com.votingapp.common.User;
 import com.votingapp.common.Message;
 import com.votingapp.common.MessageType;
 

@@ -1,6 +1,6 @@
 package com.votingapp.server;
 
-import com.votingapp.client.User;
+import com.votingapp.common.User;
 
 import java.util.ArrayList;
 import java.util.List;

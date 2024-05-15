@@ -2,7 +2,7 @@ package com.votingapp.server;
 
 import com.votingapp.common.Message;
 import com.votingapp.common.MessageType;
-import com.votingapp.client.User;
+import com.votingapp.common.User;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
