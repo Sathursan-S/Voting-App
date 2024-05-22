@@ -1,49 +1,61 @@
 package com.votingapp.common;
 
+import lombok.Getter;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Getter
 public class VoteBallot implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
-    private ConcurrentHashMap<Integer, String> candidates;
-    private ConcurrentHashMap<Integer, Integer> votes;
+    private final ConcurrentHashMap<Integer, String> candidates;
+    private final ConcurrentHashMap<Integer, Integer> votes;
 
-    // Constructor that initializes the maps
-    public VoteBallot(ConcurrentHashMap<Integer, String> candidates) {
+    public static VoteBallot instance;
+
+    public static VoteBallot getInstance() {
+        if (instance == null) {
+            instance = new VoteBallot();
+        }
+        return instance;
+    }
+
+    private VoteBallot() {
+        this.candidates = new ConcurrentHashMap<>();
+        this.votes = new ConcurrentHashMap<>();
+    }
+
+    private VoteBallot(ConcurrentHashMap<Integer, String> candidates) {
         this.candidates = new ConcurrentHashMap<>(candidates);
         this.votes = new ConcurrentHashMap<>();
         for (Integer id : this.candidates.keySet()) {
-            this.votes.put(id, 0);  // Initialize vote counts to 0 for each candidate
+            this.votes.put(id, 0);
         }
     }
 
-    // Add vote to a candidate
+    public synchronized void addCandidate(Integer candidateId, String candidateName) throws IllegalArgumentException {
+        if (candidateId == null || candidateName == null) {
+            throw new IllegalArgumentException("Candidate ID and name must not be null");
+        }
+        VoteBallot instance = getInstance();
+        instance.candidates.put(candidateId, candidateName);
+        instance.votes.put(candidateId, 0);
+    }
+
+    public void removeCandidate(Integer candidateId) {
+        instance.candidates.remove(candidateId);
+        instance.votes.remove(candidateId);
+    }
+
     public void addVote(Integer candidateId) {
-        votes.merge(candidateId, 1, Integer::sum); // Safely increment vote count in a thread-safe manner
+        instance.votes.merge(candidateId, 1, Integer::sum);
     }
 
-    // Getters for both maps
-    public ConcurrentHashMap<Integer, String> getCandidates() {
-        return candidates;
-    }
-
-    public ConcurrentHashMap<Integer, Integer> getVotes() {
-        return votes;
-    }
-
-    // Setters for both maps
-    public void setCandidates(ConcurrentHashMap<Integer, String> candidates) {
-        this.candidates = candidates;
-    }
-
-    public void setVotes(ConcurrentHashMap<Integer, Integer> votes) {
-        this.votes = votes;
-    }
-
-    // Method to reset votes
     public void initVotes() {
-        for (Integer candidateId : candidates.keySet()) {
-            votes.put(candidateId, 0);
+        for (Integer candidateId : instance.candidates.keySet()) {
+            instance.votes.put(candidateId, 0);
         }
     }
 }

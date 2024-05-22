@@ -14,10 +14,10 @@ public class CandidateManagePanel extends JPanel {
     private JButton addButton, updateButton, deleteButton, refreshButton;
     private JTable candidatesTable;
     private DefaultTableModel tableModel;
-    private VoteManager voteManager;
+    private final VoteManager voteManager;
 
-    public CandidateManagePanel(VoteManager voteManager) {
-        this.voteManager = voteManager;
+    public CandidateManagePanel() {
+        this.voteManager = VoteManager.getInstance();
         initializeComponents();
         setupLayout();
         setupTable();
@@ -75,10 +75,16 @@ public class CandidateManagePanel extends JPanel {
         Integer id = Integer.parseInt(candidateIdField.getText());
         String name = candidateNameField.getText();
         if (!name.isEmpty()) {
-            voteManager.addCandidate(id, name);
-            tableModel.addRow(new Object[]{id, name});
-            candidateIdField.setText("");
-            candidateNameField.setText("");
+            try {
+                voteManager.addCandidate(id, name);
+                tableModel.addRow(new Object[]{id, name});
+                candidateIdField.setText("");
+                candidateNameField.setText("");
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } finally {
+                refreshCandidates(null);
+            }
         }
     }
 

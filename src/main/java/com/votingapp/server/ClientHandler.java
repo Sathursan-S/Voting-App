@@ -10,24 +10,24 @@ import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientHandler extends Thread {
-    private Socket socket;
+    private final Socket socket;
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;
-    private VoteManager voteManager;
-    private AtomicBoolean authenticated = new AtomicBoolean(false);
-    private VotersManager votersManager;
+    private final VoteManager voteManager;
+    private final AtomicBoolean authenticated = new AtomicBoolean(false);
+    private final VotersManager votersManager;
     private String voterId;
 
-    public ClientHandler(Socket socket, VoteManager voteManager, VotersManager votersManager) {
+    public ClientHandler(Socket socket, VotersManager votersManager) {
         this.socket = socket;
-        this.voteManager = voteManager;
+        this.voteManager = VoteManager.getInstance();
         this.votersManager = votersManager;
         try {
             this.outputStream = new ObjectOutputStream(socket.getOutputStream());
             this.inputStream = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             System.err.println("Error initializing streams: " + e.getMessage());
-            closeConnection();  // Close connection if streams cannot be initialized
+            closeConnection();
         }
     }
 
@@ -104,6 +104,7 @@ public class ClientHandler extends Thread {
             if (outputStream != null) outputStream.close();
             if (socket != null) socket.close();
             votersManager.removeClient(voterId);
+            Server.removeClientHandler(this);
         } catch (IOException e) {
             System.err.println("Error closing connection: " + e.getMessage());
         }

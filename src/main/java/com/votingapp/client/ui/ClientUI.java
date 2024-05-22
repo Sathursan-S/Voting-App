@@ -8,14 +8,13 @@ import com.votingapp.common.MessageType;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientUI extends JFrame {
-    private CardLayout cardLayout = new CardLayout();
-    private JPanel cards = new JPanel(cardLayout);
+    private final CardLayout cardLayout = new CardLayout();
+    private final JPanel cards = new JPanel(cardLayout);
     private ClientSocketManager socketManager;
     private JTextArea messagesArea;
-    private ConcurrentHashMap<Integer, String> candidates; // Assuming this is updated based on messages received
+    private Map<Integer, String> candidates;
 
     public ClientUI(String serverAddress, int serverPort) {
         initializeUI();
@@ -68,7 +67,7 @@ public class ClientUI extends JFrame {
     }
 
     private JPanel createVotingPanel() {
-        JPanel panel = new JPanel(new GridLayout(0, 1)); // Adjust layout as needed
+        JPanel panel = new JPanel(new GridLayout(0, 1));
         JButton submitButton = new JButton("Submit Vote");
         ButtonGroup group = new ButtonGroup();
         if (candidates != null) {
@@ -125,13 +124,13 @@ public class ClientUI extends JFrame {
                     break;
                 case VOTING_UPDATE:
                     System.out.println("Received voting update: ");
-                    candidates = (ConcurrentHashMap<Integer, String>) message.getMessage();
+                    candidates = (Map<Integer, String>) message.getMessage();
                     cardLayout.show(cards, "Voting");
                     break;
                 case VOTING_REQUEST:
                     System.out.println("Received voting request: ");
-                    candidates = (ConcurrentHashMap<Integer, String>) message.getMessage();
-                    System.out.println("Candidates: " + candidates);
+                    System.out.println(message.isCorrupted());
+                    candidates = (Map<Integer, String>) message.getMessage();
                     updateVotingPanel();
                     cardLayout.show(cards, "Voting");
                     break;
@@ -196,8 +195,8 @@ public class ClientUI extends JFrame {
 
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
-            String serverAddress = JOptionPane.showInputDialog("Enter server address:");
-            String serverPortStr = JOptionPane.showInputDialog("Enter server port:");
+            String serverAddress = "localhost"; // JOptionPane.showInputDialog("Enter server address:");
+            String serverPortStr = "4196"; // JOptionPane.showInputDialog("Enter server port:");
             int serverPort = Integer.parseInt(serverPortStr);
 
             ClientUI clientUI = new ClientUI(serverAddress, serverPort);

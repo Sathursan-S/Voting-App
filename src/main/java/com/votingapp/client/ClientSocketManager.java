@@ -43,6 +43,10 @@ public class ClientSocketManager {
             while (running) {
                 try {
                     Message message = (Message) inputStream.readObject();
+                    if(message.isCorrupted()) {
+                        System.err.println("Received corrupted message from server: " + message.getMessageType());
+                        continue;
+                    }
                     onMessageReceived.accept(message);
                     System.out.println("Received message from server: " + message.getMessageType());
                 } catch (IOException | ClassNotFoundException e) {

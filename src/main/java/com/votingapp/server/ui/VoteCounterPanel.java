@@ -14,10 +14,10 @@ public class VoteCounterPanel extends JPanel {
     private JButton startCountingButton, broadcastResultsButton;
     private JTable resultsTable;
     private DefaultTableModel tableModel;
-    private VoteManager voteManager;
+    private final VoteManager voteManager;
 
-    public VoteCounterPanel(VoteManager voteManager) {
-        this.voteManager = voteManager;
+    public VoteCounterPanel() {
+        this.voteManager = VoteManager.getInstance();
         initializeComponents();
         setupLayout();
         setupTable();

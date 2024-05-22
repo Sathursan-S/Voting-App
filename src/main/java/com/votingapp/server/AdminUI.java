@@ -10,11 +10,11 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 
 public class AdminUI extends JFrame {
-    private VoteManager voteManager;
-    private VotersManager voterManager;
+    private final VoteManager voteManager;
+    private final VotersManager voterManager;
 
-    public AdminUI(VoteManager voteManager, VotersManager voterManager) {
-        this.voteManager = voteManager;
+    public AdminUI( VotersManager voterManager) {
+        this.voteManager = VoteManager.getInstance();
         this.voterManager = voterManager;
         initializeUI();
     }
@@ -70,17 +70,21 @@ public class AdminUI extends JFrame {
         } else if(voteManager.getVoteBallot().getCandidates().isEmpty()) {
             JOptionPane.showMessageDialog(this, "No candidates to vote for", "No Candidates", JOptionPane.ERROR_MESSAGE);
         } else {
-            voteManager.startVoting();
+            try {
+                voteManager.startVoting();
+            } catch (RuntimeException e) {
+                JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private JPanel createCandidateManagePanel() {
-        CandidateManagePanel panel = new CandidateManagePanel(voteManager);
+        CandidateManagePanel panel = new CandidateManagePanel();
         return panel;
     }
 
     private JPanel createVoteCounterPanel() {
-        VoteCounterPanel panel = new VoteCounterPanel(voteManager);
+        VoteCounterPanel panel = new VoteCounterPanel();
         return panel;
     }
 
@@ -101,11 +105,10 @@ public class AdminUI extends JFrame {
     }
 
     public static void main(String[] args) {
-        VoteManager voteManager = new VoteManager();
-        VotersManager voterManager = new VotersManager();
+        final VotersManager voterManager = new VotersManager();
 
         EventQueue.invokeLater(() -> {
-            AdminUI adminUI = new AdminUI(voteManager, voterManager);
+            AdminUI adminUI = new AdminUI(voterManager);
             adminUI.setVisible(true);
         });
         new Thread(() -> {
@@ -117,7 +120,7 @@ public class AdminUI extends JFrame {
                     System.err.println("Invalid port number provided, using default port " + port);
                 }
             }
-            Server server = new Server(port, voteManager, voterManager);
+            Server server = new Server(port, voterManager);
             server.start();
         }).start();
     }

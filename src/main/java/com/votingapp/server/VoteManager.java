@@ -10,23 +10,35 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @Setter
 public class VoteManager {
-    private VoteBallot voteBallot;
+    private final VoteBallot voteBallot;
     private boolean isVotingOpen = false;
 
-    public VoteManager() {
-        // Initially, there are no candidates or votes
-        this.voteBallot = new VoteBallot(new ConcurrentHashMap<>());
+    public static VoteManager voteManagerInstance;
+
+    public static VoteManager getInstance() {
+        if (voteManagerInstance == null) {
+            voteManagerInstance = new VoteManager();
+        }
+        return voteManagerInstance;
+    }
+
+    private VoteManager() {
+        this.voteBallot = VoteBallot.getInstance();
     }
 
     public void addCandidate(Integer candidateId, String candidateName) {
         if (!isVotingOpen) {
-            this.voteBallot.getCandidates().put(candidateId, candidateName);
-            this.voteBallot.getVotes().put(candidateId, 0);
+            try {
+                this.voteBallot.addCandidate(candidateId, candidateName);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         } else {
             System.out.println("Cannot add candidates during an active voting session.");
         }
@@ -34,8 +46,7 @@ public class VoteManager {
 
     public void removeCandidate(Integer candidateId) {
         if (!isVotingOpen) {
-            this.voteBallot.getCandidates().remove(candidateId);
-            this.voteBallot.getVotes().remove(candidateId);
+            this.voteBallot.removeCandidate(candidateId);
         } else {
             System.out.println("Cannot remove candidates during an active voting session.");
         }
@@ -44,11 +55,12 @@ public class VoteManager {
     public void startVoting() {
         if (this.voteBallot.getCandidates().isEmpty()) {
             System.out.println("No candidates available for voting.");
-            return;
+            throw new RuntimeException("No candidates available for voting.");
         }
         this.isVotingOpen = true;
         this.voteBallot.initVotes();
-        Message message = new Message(MessageType.VOTING_REQUEST, voteBallot.getCandidates());
+
+        Message message = new Message(MessageType.VOTING_REQUEST, new TreeMap<>(this.voteBallot.getCandidates()));
         try {
             Server.startVoting(message);
         } catch (IOException e) {
@@ -83,7 +95,6 @@ public class VoteManager {
             int maxVotes = 0;
             List<Integer> winners = new ArrayList<>();
 
-            // Determine the maximum number of votes and collect all candidates with this number
             for (ConcurrentHashMap.Entry<Integer, Integer> entry : votes.entrySet()) {
                 if (entry.getValue() > maxVotes) {
                     maxVotes = entry.getValue();
@@ -94,14 +105,12 @@ public class VoteManager {
                 }
             }
 
-            // Build ASCII visualization of the voting results
             results.append("\nElection Results:\n");
             results.append("----------------\n");
             for (ConcurrentHashMap.Entry<Integer, String> entry : this.voteBallot.getCandidates().entrySet()) {
                 results.append(String.format("%s: %s %s\n", entry.getKey(), entry.getValue(), getBar(votes.getOrDefault(entry.getKey(), 0), maxVotes)));
             }
 
-            // Reporting the winner or indicating a tie
             if (!winners.isEmpty()) {
                 if (winners.size() == 1) {
                     Integer winner = winners.get(0);
@@ -130,7 +139,7 @@ public class VoteManager {
 
     private String getBar(int count, int max) {
         StringBuilder bar = new StringBuilder();
-        int scale = Math.max(1, 10 / Math.max(max, 1));  // Prevent division by zero
+        int scale = Math.max(1, 10 / Math.max(max, 1));
         for (int i = 0; i < count * scale; i++) {
             bar.append("█");
         }
